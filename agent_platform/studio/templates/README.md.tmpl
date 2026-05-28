@@ -1,0 +1,27 @@
+# {slug}
+
+{description}
+
+## Run
+
+```bash
+cd python/agents/{slug}
+uv sync
+adk run {pkg}        # CLI
+adk web              # dev UI
+```
+
+Or run it through the platform console:
+
+```bash
+python agent_platform/registry/build_registry.py
+uvicorn agent_platform.backend.app:app --reload
+# open http://localhost:8000 and pick "{slug}" from the catalog
+```
+
+## Structure
+
+- `{pkg}/agent.py` — defines `root_agent`
+- `{pkg}/prompt.py` — system instructions
+
+Scaffolded by the ADK Agent Platform Studio.

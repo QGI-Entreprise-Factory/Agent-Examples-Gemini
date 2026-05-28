@@ -1,0 +1,12 @@
+# Copyright 2025 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License").
+
+import os
+
+from dotenv import load_dotenv
+
+load_dotenv()
+os.environ.setdefault("GOOGLE_GENAI_USE_VERTEXAI", "True")
+
+from . import agent  # noqa: E402, F401

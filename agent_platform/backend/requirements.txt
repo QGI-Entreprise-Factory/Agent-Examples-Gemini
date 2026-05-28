@@ -1,0 +1,9 @@
+# API gateway runtime deps.
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+pydantic>=2.10.0
+
+# Optional: enables the /run endpoint (agent execution). The catalog works
+# without these. Most sample agents also need GCP/Vertex credentials at runtime.
+google-adk>=1.0.0
+google-genai>=1.9.0

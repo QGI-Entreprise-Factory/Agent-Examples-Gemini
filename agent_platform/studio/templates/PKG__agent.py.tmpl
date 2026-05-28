@@ -1,0 +1,19 @@
+# Copyright 2025 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License").
+
+"""{description}"""
+
+from google.adk.agents import LlmAgent
+
+from . import prompt
+
+MODEL = "{model}"
+
+root_agent = LlmAgent(
+    name="{pkg}",
+    model=MODEL,
+    description="{description}",
+    instruction=prompt.ROOT_PROMPT,
+    tools=[],
+)

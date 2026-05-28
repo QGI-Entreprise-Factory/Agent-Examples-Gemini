@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<!--
+ Copyright 2025 Google LLC. Licensed under the Apache License, Version 2.0.
+ ADK Agent Platform - web console (zero build step, vanilla JS).
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ADK Agent Platform</title>
+  <style>
+    :root {
+      --bg: #0f1419; --panel: #171f2b; --border: #2a3543; --text: #e6edf3;
+      --muted: #8b98a9; --accent: #4f8cff; --accent2: #1f6feb; --chip: #233044;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; }
+    header { padding: 14px 22px; border-bottom: 1px solid var(--border); display: flex;
+             align-items: center; gap: 14px; }
+    header h1 { font-size: 17px; margin: 0; font-weight: 600; }
+    header .badge { background: var(--chip); color: var(--muted); padding: 3px 9px; border-radius: 20px; font-size: 12px; }
+    .layout { display: flex; flex: 1; min-height: 0; }
+    .sidebar { width: 380px; border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+    .filters { padding: 12px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
+    .filters input, .filters select { width: 100%; padding: 8px 10px; background: var(--bg); color: var(--text);
+            border: 1px solid var(--border); border-radius: 8px; font-size: 13px; }
+    .row { display: flex; gap: 8px; }
+    .list { overflow-y: auto; flex: 1; padding: 6px; }
+    .card { padding: 11px 13px; border-radius: 10px; cursor: pointer; border: 1px solid transparent; }
+    .card:hover { background: var(--panel); }
+    .card.active { background: var(--panel); border-color: var(--accent2); }
+    .card .name { font-weight: 600; font-size: 14px; }
+    .card .desc { color: var(--muted); font-size: 12px; margin-top: 3px; line-height: 1.4;
+                  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .tags { margin-top: 7px; display: flex; gap: 5px; flex-wrap: wrap; }
+    .tag { font-size: 10px; padding: 2px 7px; border-radius: 20px; background: var(--chip); color: var(--muted); }
+    .tag.lang { color: var(--accent); }
+    .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .detail { padding: 18px 22px; border-bottom: 1px solid var(--border); }
+    .detail h2 { margin: 0 0 4px; font-size: 19px; }
+    .detail .path { color: var(--muted); font-size: 12px; font-family: monospace; }
+    .detail p { color: var(--muted); font-size: 14px; line-height: 1.5; }
+    .chat { flex: 1; overflow-y: auto; padding: 18px 22px; display: flex; flex-direction: column; gap: 12px; }
+    .msg { max-width: 78%; padding: 10px 14px; border-radius: 12px; font-size: 14px; line-height: 1.5; white-space: pre-wrap; }
+    .msg.user { align-self: flex-end; background: var(--accent2); }
+    .msg.agent { align-self: flex-start; background: var(--panel); border: 1px solid var(--border); }
+    .msg.error { align-self: center; background: #3a1d1d; border: 1px solid #5c2b2b; color: #ffb4b4; font-size: 13px; }
+    .composer { padding: 14px 22px; border-top: 1px solid var(--border); display: flex; gap: 10px; }
+    .composer input { flex: 1; padding: 11px 14px; background: var(--bg); color: var(--text);
+            border: 1px solid var(--border); border-radius: 10px; font-size: 14px; }
+    .composer button { padding: 11px 20px; background: var(--accent2); color: #fff; border: none;
+            border-radius: 10px; font-weight: 600; cursor: pointer; }
+    .composer button:disabled { opacity: .5; cursor: not-allowed; }
+    .empty { color: var(--muted); text-align: center; margin-top: 80px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🤖 ADK Agent Platform</h1>
+    <span class="badge" id="count">loading…</span>
+    <span class="badge" id="adk"></span>
+  </header>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="filters">
+        <input id="search" placeholder="Search agents…" />
+        <div class="row">
+          <select id="lang"><option value="">All languages</option></select>
+          <select id="cat"><option value="">All categories</option></select>
+        </div>
+      </div>
+      <div class="list" id="list"></div>
+    </aside>
+    <main class="main">
+      <div class="detail" id="detail"><div class="empty">Select an agent from the catalog.</div></div>
+      <div class="chat" id="chat"></div>
+      <div class="composer">
+        <input id="input" placeholder="Message the agent…" disabled />
+        <button id="send" disabled>Send</button>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    let state = { agents: [], selected: null, sessionId: null };
+
+    async function api(path, opts) {
+      const r = await fetch(path, opts);
+      if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.detail || r.statusText); }
+      return r.json();
+    }
+
+    async function boot() {
+      const data = await api("/api/agents");
+      state.agents = data.agents;
+      $("count").textContent = data.count + " agents";
+      const health = await api("/api/health");
+      $("adk").textContent = health.adk_available ? "execution: ready" : "execution: catalog-only";
+      data.languages.forEach((l) => $("lang").add(new Option(l, l)));
+      data.categories.forEach((c) => $("cat").add(new Option(c, c)));
+      render();
+    }
+
+    function render() {
+      const q = $("search").value.toLowerCase();
+      const lang = $("lang").value, cat = $("cat").value;
+      const filtered = state.agents.filter((a) =>
+        (!lang || a.language === lang) && (!cat || a.category === cat) &&
+        (!q || a.name.toLowerCase().includes(q) || a.description.toLowerCase().includes(q) || a.id.includes(q)));
+      $("list").innerHTML = filtered.map((a) => `
+        <div class="card ${state.selected?.id === a.id ? "active" : ""}" data-id="${a.id}">
+          <div class="name">${esc(a.name)}</div>
+          <div class="desc">${esc(a.description || "No description.")}</div>
+          <div class="tags">
+            <span class="tag lang">${a.language}</span>
+            <span class="tag">${a.category}</span>
+            ${a.runnable ? '<span class="tag">runnable</span>' : ""}
+            ${a.deployable ? '<span class="tag">deployable</span>' : ""}
+          </div>
+        </div>`).join("") || '<div class="empty">No matches.</div>';
+      document.querySelectorAll(".card").forEach((c) =>
+        c.onclick = () => select(c.dataset.id));
+    }
+
+    async function select(id) {
+      const detail = await api("/api/agents/" + id);
+      state.selected = detail; state.sessionId = null;
+      render();
+      $("detail").innerHTML = `
+        <h2>${esc(detail.name)}</h2>
+        <div class="path">${detail.path}</div>
+        <p>${esc(detail.description || "")}</p>`;
+      $("chat").innerHTML = "";
+      const can = detail.runnable;
+      $("input").disabled = !can; $("send").disabled = !can;
+      $("input").placeholder = can ? "Message the agent…" : "This agent isn't runnable from the prototype.";
+    }
+
+    function bubble(cls, text) {
+      const d = document.createElement("div");
+      d.className = "msg " + cls; d.textContent = text;
+      $("chat").appendChild(d); $("chat").scrollTop = $("chat").scrollHeight;
+      return d;
+    }
+
+    async function send() {
+      const text = $("input").value.trim();
+      if (!text || !state.selected) return;
+      $("input").value = ""; bubble("user", text);
+      $("send").disabled = true;
+      const thinking = bubble("agent", "…");
+      try {
+        const res = await api(`/api/agents/${state.selected.id}/run`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: text, session_id: state.sessionId }),
+        });
+        state.sessionId = res.session_id;
+        const reply = res.events.filter((e) => e.text).map((e) => e.text).join("\n") || "(no text response)";
+        thinking.textContent = reply;
+      } catch (err) {
+        thinking.remove(); bubble("error", err.message);
+      } finally { $("send").disabled = false; $("input").focus(); }
+    }
+
+    function esc(s) { const d = document.createElement("div"); d.textContent = s || ""; return d.innerHTML; }
+
+    $("search").oninput = render; $("lang").onchange = render; $("cat").onchange = render;
+    $("send").onclick = send;
+    $("input").onkeydown = (e) => { if (e.key === "Enter") send(); };
+    boot().catch((e) => $("count").textContent = "error: " + e.message);
+  </script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+[project]
+name = "{slug}"
+version = "0.1.0"
+description = "{description}"
+license = {{ text = "Apache License 2.0" }}
+readme = "README.md"
+requires-python = ">=3.10,<3.13"
+
+dependencies = [
+    "google-adk>=1.0.0",
+    "google-genai>=1.9.0",
+    "python-dotenv>=1.0.1",
+    "pydantic>=2.10.6",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.2",
+    "pytest-asyncio>=0.23.7",
+]
