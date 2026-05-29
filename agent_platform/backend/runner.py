@@ -23,6 +23,7 @@ the gateway can degrade gracefully -- the catalog stays usable either way.
 from __future__ import annotations
 
 import importlib
+import re
 import sys
 from functools import lru_cache
 from pathlib import Path
@@ -88,14 +89,17 @@ class AgentSession:
 
         self.agent_id = agent_id
         self.user_id = user_id
+        # ADK App names must be alphanumeric/underscore/hyphen, so the "lang/name"
+        # agent_id cannot be used directly as an app_name.
+        self.app_name = re.sub(r"[^A-Za-z0-9_-]", "_", agent_id)
         root_agent = load_root_agent(agent_id)
-        self._runner = InMemoryRunner(agent=root_agent, app_name=agent_id)
+        self._runner = InMemoryRunner(agent=root_agent, app_name=self.app_name)
         self._session = None
 
     async def _ensure_session(self):
         if self._session is None:
             self._session = await self._runner.session_service.create_session(
-                app_name=self.agent_id, user_id=self.user_id
+                app_name=self.app_name, user_id=self.user_id
             )
         return self._session
 
