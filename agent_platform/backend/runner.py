@@ -50,10 +50,10 @@ def load_root_agent(agent_id: str):
     meta = registry.get_agent(agent_id)
     if meta is None:
         raise AgentExecutionError(f"Unknown agent: {agent_id}")
-    if meta["language"] != "python":
+    if meta["language"] not in ("python", "builtin"):
         raise AgentExecutionError(
-            f"{agent_id} is a {meta['language']} agent; the prototype runner only "
-            "executes Python agents."
+            f"{agent_id} is a {meta['language']} agent; the runner currently "
+            "executes Python and builtin agents only."
         )
     module_path = meta.get("module")
     if not module_path:
@@ -99,26 +99,36 @@ class AgentSession:
             )
         return self._session
 
-    async def send(self, message: str) -> list[dict]:
-        """Send a user turn; return the agent's text/event responses."""
+    async def stream(self, message: str):
+        """Send a user turn; yield normalized event dicts as they arrive."""
         from google.genai import types  # local import: optional dep
 
         session = await self._ensure_session()
         content = types.Content(role="user", parts=[types.Part(text=message)])
-        events: list[dict] = []
         async for event in self._runner.run_async(
             user_id=self.user_id,
             session_id=session.id,
             new_message=content,
         ):
-            text_parts = []
-            if event.content and event.content.parts:
-                text_parts = [p.text for p in event.content.parts if getattr(p, "text", None)]
-            events.append(
-                {
-                    "author": getattr(event, "author", "agent"),
-                    "text": "".join(text_parts),
-                    "is_final": event.is_final_response() if hasattr(event, "is_final_response") else False,
-                }
-            )
-        return events
+            yield _normalize_event(event)
+
+    async def send(self, message: str) -> list[dict]:
+        """Send a user turn; return all of the agent's event responses."""
+        return [event async for event in self.stream(message)]
+
+
+def _normalize_event(event) -> dict:
+    text_parts = []
+    if getattr(event, "content", None) and event.content.parts:
+        text_parts = [p.text for p in event.content.parts if getattr(p, "text", None)]
+    is_final = (
+        event.is_final_response()
+        if hasattr(event, "is_final_response")
+        else not getattr(event, "partial", False)
+    )
+    return {
+        "author": getattr(event, "author", "agent"),
+        "text": "".join(text_parts),
+        "partial": bool(getattr(event, "partial", False)),
+        "is_final": bool(is_final),
+    }

@@ -19,6 +19,8 @@ Endpoints:
   GET  /api/agents                      list + filter (language, category, q)
   GET  /api/agents/{lang}/{name}        agent detail (+ README)
   POST /api/agents/{lang}/{name}/run    run one turn (requires google-adk + creds)
+  POST /api/agents/{lang}/{name}/stream run one turn, streamed over SSE
+  POST /api/agents/{lang}/{name}/stream run one turn, streamed over SSE
 
 The catalog endpoints are always available. Execution degrades gracefully when
 the ADK or credentials are absent.
@@ -26,6 +28,7 @@ the ADK or credentials are absent.
 
 from __future__ import annotations
 
+import json
 import uuid
 from pathlib import Path
 
@@ -34,6 +37,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+from sse_starlette.sse import EventSourceResponse
 
 from . import registry, runner
 
@@ -114,6 +118,34 @@ async def run_agent(language: str, name: str, req: RunRequest) -> RunResponse:
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(status_code=500, detail=f"Agent error: {exc}") from exc
     return RunResponse(session_id=session_id, events=events)
+
+
+@app.post("/api/agents/{language}/{name}/stream")
+async def stream_agent(language: str, name: str, req: RunRequest):
+    """Stream an agent turn over SSE (one event per ADK event)."""
+    agent_id = f"{language}/{name}"
+    if not registry.get_agent(agent_id):
+        raise HTTPException(status_code=404, detail=f"Agent not found: {agent_id}")
+
+    session_id = req.session_id or str(uuid.uuid4())
+    session = _SESSIONS.get(session_id)
+    try:
+        if session is None or session.agent_id != agent_id:
+            session = runner.AgentSession(agent_id)
+            _SESSIONS[session_id] = session
+    except runner.AgentExecutionError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    async def event_source():
+        yield {"event": "session", "data": json.dumps({"session_id": session_id})}
+        try:
+            async for ev in session.stream(req.message):
+                yield {"event": "message", "data": json.dumps(ev)}
+        except Exception as exc:  # noqa: BLE001
+            yield {"event": "error", "data": json.dumps({"detail": str(exc)})}
+        yield {"event": "done", "data": "{}"}
+
+    return EventSourceResponse(event_source())
 
 
 # --- Static web console (mounted last so /api/* wins) ---------------------

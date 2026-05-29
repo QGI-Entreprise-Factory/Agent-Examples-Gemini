@@ -1,7 +1,8 @@
 {
   "version": 1,
-  "agent_count": 80,
+  "agent_count": 81,
   "languages": [
+    "builtin",
     "go",
     "java",
     "python",
@@ -20,6 +21,20 @@
   ],
   "agents": [
     {
+      "id": "builtin/echo",
+      "slug": "echo",
+      "name": "platform-echo",
+      "description": "Credential-free echo agent used to exercise the platform end to end.",
+      "language": "builtin",
+      "path": "agent_platform/builtin_agents/echo",
+      "category": "general",
+      "has_readme": true,
+      "deployable": false,
+      "builtin": true,
+      "module": "echo_agent",
+      "runnable": true
+    },
+    {
       "id": "python/RAG",
       "slug": "rag",
       "name": "rag",
@@ -29,6 +44,7 @@
       "category": "general",
       "has_readme": true,
       "deployable": true,
+      "builtin": false,
       "module": "rag",
       "runnable": true
     },
@@ -42,6 +58,7 @@
       "category": "research",
       "has_readme": true,
       "deployable": true,
+      "builtin": false,
       "module": "academic_research",
       "runnable": true
     },
@@ -55,6 +72,7 @@
       "category": "general",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": "adk_ae_oauth",
       "runnable": true
     },
@@ -68,6 +86,7 @@
       "category": "data",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": "agent_observability_bq",
       "runnable": true
     },
@@ -81,6 +100,7 @@
       "category": "general",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": "app",
       "runnable": true
     },
@@ -94,6 +114,7 @@
       "category": "security",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": "llm_red_team_agent",
       "runnable": true
     },
@@ -107,6 +128,7 @@
       "category": "research",
       "has_readme": true,
       "deployable": true,
+      "builtin": false,
       "module": "airflow_version_upgrade_agent",
       "runnable": true
     },
@@ -120,6 +142,7 @@
       "category": "customer",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": "expense_agent",
       "runnable": true
     },
@@ -133,6 +156,7 @@
       "category": "finance",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": "antom-payemnt-agent",
       "runnable": true
     },
@@ -146,6 +170,7 @@
       "category": "finance",
       "has_readme": true,
       "deployable": true,
+      "builtin": false,
       "module": "auto_insurance_agent",
       "runnable": true
     },
@@ -159,6 +184,7 @@
       "category": "general",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": null,
       "runnable": false
     },
@@ -172,6 +198,7 @@
       "category": "media",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": "blogger_agent",
       "runnable": true
     },
@@ -185,6 +212,7 @@
       "category": "research",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": "presentation_agent",
       "runnable": true
     },
@@ -198,6 +226,7 @@
       "category": "media",
       "has_readme": true,
       "deployable": true,
+      "builtin": false,
       "module": "brand_aligner_agent",
       "runnable": true
     },
@@ -211,6 +240,7 @@
       "category": "research",
       "has_readme": true,
       "deployable": true,
+      "builtin": false,
       "module": "brand_search_optimization",
       "runnable": true
     },
@@ -224,6 +254,7 @@
       "category": "research",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": "camel",
       "runnable": true
     },
@@ -237,6 +268,7 @@
       "category": "finance",
       "has_readme": true,
       "deployable": true,
+      "builtin": false,
       "module": "claim_adjudication_agent",
       "runnable": true
     },
@@ -250,6 +282,7 @@
       "category": "general",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": "currency_agent",
       "runnable": true
     },
@@ -263,6 +296,7 @@
       "category": "customer",
       "has_readme": true,
       "deployable": true,
+      "builtin": false,
       "module": "customer_service",
       "runnable": true
     },
@@ -276,6 +310,7 @@
       "category": "ops",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": "cyber_guardian",
       "runnable": true
     },
@@ -289,6 +324,7 @@
       "category": "data",
       "has_readme": true,
       "deployable": true,
+      "builtin": false,
       "module": "data_engineering_agent",
       "runnable": true
     },
@@ -302,6 +338,7 @@
       "category": "data",
       "has_readme": true,
       "deployable": true,
+      "builtin": false,
       "module": "data_science",
       "runnable": true
     },
@@ -315,6 +352,7 @@
       "category": "research",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": "app",
       "runnable": true
     },
@@ -328,6 +366,7 @@
       "category": "general",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": "earth_engine_geospatial",
       "runnable": true
     },
@@ -341,6 +380,7 @@
       "category": "research",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": "economic_research",
       "runnable": true
     },
@@ -354,6 +394,7 @@
       "category": "finance",
       "has_readme": true,
       "deployable": true,
+      "builtin": false,
       "module": "financial_advisor",
       "runnable": true
     },
@@ -367,6 +408,7 @@
       "category": "research",
       "has_readme": true,
       "deployable": true,
+      "builtin": false,
       "module": "fomc_research",
       "runnable": true
     },
@@ -380,6 +422,7 @@
       "category": "research",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": "fun_facts",
       "runnable": true
     },
@@ -393,6 +436,7 @@
       "category": "research",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": null,
       "runnable": false
     },
@@ -406,6 +450,7 @@
       "category": "general",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": "food_tour_app",
       "runnable": true
     },
@@ -419,6 +464,7 @@
       "category": "media",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": "genmedia4commerce",
       "runnable": true
     },
@@ -432,6 +478,7 @@
       "category": "finance",
       "has_readme": true,
       "deployable": true,
+      "builtin": false,
       "module": "global_kyc_agent",
       "runnable": true
     },
@@ -445,6 +492,7 @@
       "category": "research",
       "has_readme": true,
       "deployable": true,
+      "builtin": false,
       "module": "google_trends_agent",
       "runnable": true
     },
@@ -458,6 +506,7 @@
       "category": "data",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": "cookie_scheduler_agent",
       "runnable": true
     },
@@ -471,6 +520,7 @@
       "category": "general",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": "high_volume_document_analyzer",
       "runnable": true
     },
@@ -484,6 +534,7 @@
       "category": "media",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": "image_scoring",
       "runnable": true
     },
@@ -497,6 +548,7 @@
       "category": "ops",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": "incident_management",
       "runnable": true
     },
@@ -510,6 +562,7 @@
       "category": "finance",
       "has_readme": true,
       "deployable": true,
+      "builtin": false,
       "module": "invoice_processing",
       "runnable": true
     },
@@ -523,6 +576,7 @@
       "category": "security",
       "has_readme": true,
       "deployable": true,
+      "builtin": false,
       "module": "llm_auditor",
       "runnable": true
     },
@@ -536,6 +590,7 @@
       "category": "data",
       "has_readme": true,
       "deployable": true,
+      "builtin": false,
       "module": "machine_learning_engineering",
       "runnable": true
     },
@@ -549,6 +604,7 @@
       "category": "media",
       "has_readme": true,
       "deployable": true,
+      "builtin": false,
       "module": "marketing_agency",
       "runnable": true
     },
@@ -562,6 +618,7 @@
       "category": "healthcare",
       "has_readme": true,
       "deployable": true,
+      "builtin": false,
       "module": "medical_pre_authorization",
       "runnable": true
     },
@@ -575,6 +632,7 @@
       "category": "general",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": "app",
       "runnable": true
     },
@@ -588,6 +646,7 @@
       "category": "general",
       "has_readme": true,
       "deployable": true,
+      "builtin": false,
       "module": "nexshift_agent",
       "runnable": true
     },
@@ -601,6 +660,7 @@
       "category": "healthcare",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": "nurse_handover",
       "runnable": true
     },
@@ -614,6 +674,7 @@
       "category": "media",
       "has_readme": true,
       "deployable": true,
+      "builtin": false,
       "module": "on_brand_genmedia",
       "runnable": true
     },
@@ -627,6 +688,7 @@
       "category": "ops",
       "has_readme": true,
       "deployable": true,
+      "builtin": false,
       "module": "order_processing",
       "runnable": true
     },
@@ -640,6 +702,7 @@
       "category": "general",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": "parallel_task_decomposition_agent",
       "runnable": true
     },
@@ -653,6 +716,7 @@
       "category": "customer",
       "has_readme": true,
       "deployable": true,
+      "builtin": false,
       "module": "personalized_shopping",
       "runnable": true
     },
@@ -666,6 +730,7 @@
       "category": "data",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": "plumber_agent",
       "runnable": true
     },
@@ -679,6 +744,7 @@
       "category": "general",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": "podcast_transcript_agent",
       "runnable": true
     },
@@ -692,6 +758,7 @@
       "category": "data",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": "policy_as_code_agent",
       "runnable": true
     },
@@ -705,6 +772,7 @@
       "category": "general",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": "content_gen_agent",
       "runnable": true
     },
@@ -718,6 +786,7 @@
       "category": "general",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": "server.example_agent",
       "runnable": true
     },
@@ -731,6 +800,7 @@
       "category": "general",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": "app",
       "runnable": true
     },
@@ -744,6 +814,7 @@
       "category": "security",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": "safety_plugins",
       "runnable": true
     },
@@ -757,6 +828,7 @@
       "category": "ops",
       "has_readme": true,
       "deployable": true,
+      "builtin": false,
       "module": "sdlc_task_planner",
       "runnable": true
     },
@@ -770,6 +842,7 @@
       "category": "ops",
       "has_readme": true,
       "deployable": true,
+      "builtin": false,
       "module": "sdlc_technical_designer",
       "runnable": true
     },
@@ -783,6 +856,7 @@
       "category": "media",
       "has_readme": true,
       "deployable": true,
+      "builtin": false,
       "module": "sdlc_user_story_refiner",
       "runnable": true
     },
@@ -796,6 +870,7 @@
       "category": "media",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": "app",
       "runnable": true
     },
@@ -809,6 +884,7 @@
       "category": "finance",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": "small_business_loan_agent",
       "runnable": true
     },
@@ -822,6 +898,7 @@
       "category": "ops",
       "has_readme": true,
       "deployable": true,
+      "builtin": false,
       "module": "software_bug_assistant",
       "runnable": true
     },
@@ -835,6 +912,7 @@
       "category": "media",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": "story_teller_agent",
       "runnable": true
     },
@@ -848,6 +926,7 @@
       "category": "ops",
       "has_readme": true,
       "deployable": true,
+      "builtin": false,
       "module": "supply_chain",
       "runnable": true
     },
@@ -861,6 +940,7 @@
       "category": "data",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": "swe_benchmark_agent",
       "runnable": true
     },
@@ -874,6 +954,7 @@
       "category": "general",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": null,
       "runnable": false
     },
@@ -887,6 +968,7 @@
       "category": "customer",
       "has_readme": true,
       "deployable": true,
+      "builtin": false,
       "module": "travel_concierge",
       "runnable": true
     },
@@ -900,6 +982,7 @@
       "category": "research",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": "agent",
       "runnable": true
     },
@@ -913,6 +996,7 @@
       "category": "general",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": "agent",
       "runnable": true
     },
@@ -926,6 +1010,7 @@
       "category": "customer",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": "agent",
       "runnable": true
     },
@@ -939,6 +1024,7 @@
       "category": "general",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": "agent",
       "runnable": true
     },
@@ -952,6 +1038,7 @@
       "category": "data",
       "has_readme": true,
       "deployable": true,
+      "builtin": false,
       "module": "youtube_analyst",
       "runnable": true
     },
@@ -965,6 +1052,7 @@
       "category": "ops",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": null,
       "runnable": false
     },
@@ -978,6 +1066,7 @@
       "category": "general",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": null,
       "runnable": false
     },
@@ -991,6 +1080,7 @@
       "category": "finance",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": null,
       "runnable": false
     },
@@ -1004,6 +1094,7 @@
       "category": "research",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": null,
       "runnable": false
     },
@@ -1017,6 +1108,7 @@
       "category": "general",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": null,
       "runnable": false
     },
@@ -1030,6 +1122,7 @@
       "category": "research",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": null,
       "runnable": false
     },
@@ -1043,6 +1136,7 @@
       "category": "research",
       "has_readme": true,
       "deployable": true,
+      "builtin": false,
       "module": null,
       "runnable": false
     },
@@ -1056,6 +1150,7 @@
       "category": "data",
       "has_readme": true,
       "deployable": false,
+      "builtin": false,
       "module": null,
       "runnable": false
     }

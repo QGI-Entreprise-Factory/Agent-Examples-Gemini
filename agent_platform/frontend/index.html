@@ -150,18 +150,49 @@
       if (!text || !state.selected) return;
       $("input").value = ""; bubble("user", text);
       $("send").disabled = true;
-      const thinking = bubble("agent", "…");
+      const out = bubble("agent", "…");
+      let streamed = "", finalText = "";
       try {
-        const res = await api(`/api/agents/${state.selected.id}/run`, {
+        const resp = await fetch(`/api/agents/${state.selected.id}/stream`, {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ message: text, session_id: state.sessionId }),
         });
-        state.sessionId = res.session_id;
-        const reply = res.events.filter((e) => e.text).map((e) => e.text).join("\n") || "(no text response)";
-        thinking.textContent = reply;
+        if (!resp.ok) {
+          const e = await resp.json().catch(() => ({}));
+          throw new Error(e.detail || resp.statusText);
+        }
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder();
+        let buf = "";
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          const frames = buf.split(/\r?\n\r?\n/);
+          buf = frames.pop();  // keep the partial frame
+          for (const frame of frames) handleFrame(frame);
+        }
+        out.textContent = finalText || streamed || "(no text response)";
       } catch (err) {
-        thinking.remove(); bubble("error", err.message);
+        out.remove(); bubble("error", err.message);
       } finally { $("send").disabled = false; $("input").focus(); }
+
+      function handleFrame(frame) {
+        let event = "message", data = "";
+        for (const line of frame.split(/\r?\n/)) {
+          if (line.startsWith("event:")) event = line.slice(6).trim();
+          else if (line.startsWith("data:")) data += line.slice(5).trim();
+        }
+        if (!data) return;
+        let payload; try { payload = JSON.parse(data); } catch { return; }
+        if (event === "session") { state.sessionId = payload.session_id; }
+        else if (event === "error") { throw new Error(payload.detail); }
+        else if (event === "message") {
+          if (payload.partial && payload.text) { streamed += payload.text; out.textContent = streamed; }
+          else if (payload.is_final && payload.text) { finalText = payload.text; out.textContent = finalText; }
+          $("chat").scrollTop = $("chat").scrollHeight;
+        }
+      }
     }
 
     function esc(s) { const d = document.createElement("div"); d.textContent = s || ""; return d.innerHTML; }

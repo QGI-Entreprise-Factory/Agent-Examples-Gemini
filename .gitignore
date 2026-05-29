@@ -236,3 +236,4 @@ go/agents/sail-researcher/server
 
 .venv/
 agent_platform/TEST_RESULTS.txt
+agent_platform/registry/agents.json

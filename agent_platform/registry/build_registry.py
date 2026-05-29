@@ -39,6 +39,8 @@ except ModuleNotFoundError:  # pragma: no cover
 # platform/registry/build_registry.py -> repo root is three levels up.
 REPO_ROOT = Path(__file__).resolve().parents[2]
 LANGUAGES = ("python", "typescript", "go", "java")
+# Platform-provided agents (e.g. the credential-free echo agent for e2e).
+BUILTIN_ROOT = Path(__file__).resolve().parents[1] / "builtin_agents"
 OUTPUT = Path(__file__).resolve().parent / "agents.json"
 
 
@@ -117,8 +119,42 @@ def _categorize(name: str, description: str) -> str:
     return "general"
 
 
+def _build_entry(agent_dir: Path, lang: str) -> dict:
+    """Build one manifest entry for an agent directory."""
+    project = _read_pyproject(agent_dir)
+    name = project.get("name") or _read_readme_title(agent_dir) or agent_dir.name
+    description = (
+        project.get("description") or _read_readme_summary(agent_dir) or ""
+    )
+    entry = {
+        "id": f"{lang}/{agent_dir.name}",
+        "slug": _slugify(agent_dir.name),
+        "name": name,
+        "description": description.strip(),
+        "language": lang,
+        "path": str(agent_dir.relative_to(REPO_ROOT)),
+        "category": _categorize(agent_dir.name, description),
+        "has_readme": (agent_dir / "README.md").exists(),
+        "deployable": (agent_dir / "deployment").is_dir(),
+        "builtin": lang == "builtin",
+    }
+    if lang in ("python", "builtin"):
+        entry["module"] = _find_python_module(agent_dir)
+        entry["runnable"] = entry["module"] is not None
+    else:
+        entry["module"] = None
+        entry["runnable"] = False
+    return entry
+
+
 def discover() -> list[dict]:
     agents: list[dict] = []
+    # Platform builtin agents first (credential-free, always runnable).
+    if BUILTIN_ROOT.is_dir():
+        for agent_dir in sorted(p for p in BUILTIN_ROOT.iterdir() if p.is_dir()):
+            if agent_dir.name.startswith((".", "_")):
+                continue
+            agents.append(_build_entry(agent_dir, "builtin"))
     for lang in LANGUAGES:
         agents_root = REPO_ROOT / lang / "agents"
         if not agents_root.is_dir():
@@ -126,35 +162,7 @@ def discover() -> list[dict]:
         for agent_dir in sorted(p for p in agents_root.iterdir() if p.is_dir()):
             if agent_dir.name.startswith((".", "_")):
                 continue
-            project = _read_pyproject(agent_dir)
-            name = (
-                project.get("name")
-                or _read_readme_title(agent_dir)
-                or agent_dir.name
-            )
-            description = (
-                project.get("description")
-                or _read_readme_summary(agent_dir)
-                or ""
-            )
-            entry = {
-                "id": f"{lang}/{agent_dir.name}",
-                "slug": _slugify(agent_dir.name),
-                "name": name,
-                "description": description.strip(),
-                "language": lang,
-                "path": str(agent_dir.relative_to(REPO_ROOT)),
-                "category": _categorize(agent_dir.name, description),
-                "has_readme": (agent_dir / "README.md").exists(),
-                "deployable": (agent_dir / "deployment").is_dir(),
-            }
-            if lang == "python":
-                entry["module"] = _find_python_module(agent_dir)
-                entry["runnable"] = entry["module"] is not None
-            else:
-                entry["module"] = None
-                entry["runnable"] = False
-            agents.append(entry)
+            agents.append(_build_entry(agent_dir, lang))
     return agents
 
 
