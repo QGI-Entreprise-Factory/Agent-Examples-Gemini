@@ -25,50 +25,69 @@ are picked up automatically** with zero per-agent wiring.
 ## The five layers
 
 ```
+        agp CLI (cli.py) ───────────────┐  drives every layer below
+                                         ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  3. Web Console (frontend/index.html)                         │
-│     browse catalog · filter · open agent · chat               │
+│  Web Console (frontend/index.html)                            │
+│     browse · filter · streaming chat (fetch + ReadableStream) │
 └───────────────┬───────────────────────────────────────────────┘
-                │ HTTP/JSON
+                │ HTTP/JSON + SSE
 ┌───────────────▼───────────────────────────────────────────────┐
-│  2. API Gateway (backend/app.py — FastAPI)                     │
-│     /api/agents  ·  /api/agents/{id}  ·  /api/agents/{id}/run  │
-│     sessions · graceful degradation when ADK/creds absent       │
+│  API Gateway (backend/app.py — FastAPI)                        │
+│   /api/agents · /{id} · /{id}/run · /{id}/stream (SSE)         │
+│   sessions · graceful degradation when ADK/creds absent        │
 └───────┬───────────────────────────────┬───────────────────────┘
-        │ reads                          │ imports + runs
+        │ reads                          │ imports + runs (stream)
 ┌───────▼────────────┐         ┌─────────▼──────────────────────┐
-│ 1. Registry         │         │  ADK Runner (runner.py)         │
+│ Registry            │         │  ADK Runner (runner.py)         │
 │  build_registry.py  │         │  dynamic import of root_agent   │
-│  -> agents.json     │         │  InMemoryRunner + sessions      │
+│  -> agents.json     │         │  InMemoryRunner + run_async     │
 └─────────────────────┘         └─────────────────────────────────┘
-        ▲                                 ▲
-        │ scans                           │ targets
+        ▲ scans                           ▲ targets
 ┌───────┴─────────────────────────────────┴──────────────────────┐
-│  Existing sample agents  (python/ typescript/ go/ java/)        │
-│  4. Studio (studio/create_agent.py) scaffolds NEW ones here     │
-│  5. Deploy (deploy/) containerizes gateway; per-agent → Vertex  │
+│  Sample agents (python/ typescript/ go/ java/)                  │
+│  + builtin_agents/echo (credential-free, for e2e)              │
+│  Studio (studio/) scaffolds NEW agents · Deploy (deploy/)       │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
-| # | Layer | Module | Status (prototype) |
-|---|-------|--------|--------------------|
-| 1 | **Registry** — auto-discovery → `agents.json` | `registry/build_registry.py` | ✅ 80 agents, 9 categories, offline |
-| 2 | **API Gateway** — unified catalog + run API | `backend/app.py`, `registry.py`, `runner.py` | ✅ catalog always; run when ADK present |
-| 3 | **Web Console** — browse + chat | `frontend/index.html` | ✅ zero-build SPA |
-| 4 | **Studio** — scaffold new agents | `studio/create_agent.py` + templates | ✅ create → register → appears |
-| 5 | **Deploy** — host gateway / per-agent | `deploy/Dockerfile`, `deploy/README.md` | ✅ Dockerfile + Cloud Run notes |
+| # | Layer | Module | Status |
+|---|-------|--------|--------|
+| 1 | **Registry** — auto-discovery → `agents.json` | `registry/build_registry.py` | ✅ 80+ agents, 9 categories, offline |
+| 2 | **API Gateway** — catalog + run + **SSE stream** | `backend/app.py`, `registry.py`, `runner.py` | ✅ catalog always; run/stream when ADK present |
+| 3 | **Web Console** — browse + **streaming chat** | `frontend/index.html` | ✅ zero-build SPA, live token stream |
+| 4 | **CLI** — `agp` drives the whole platform | `cli.py`, `__main__.py` | ✅ doctor/list/show/run/serve/new/test |
+| 5 | **Studio** — scaffold new agents | `studio/create_agent.py` + templates | ✅ create → register → appears |
+| 6 | **Builtin agent** — credential-free e2e | `builtin_agents/echo/` | ✅ real ADK BaseAgent, no creds |
+| 7 | **Tests** — light + full e2e | `tests/` | ✅ registry/API unit + e2e via echo |
+| 8 | **Deploy** — host gateway / per-agent | `deploy/` | ✅ Dockerfile + Cloud Run notes |
 
-## What the prototype intentionally does NOT do yet
+## Streaming
 
-These are the next steps to harden it into a real product:
+`/api/agents/{id}/stream` returns Server-Sent Events. The runner wraps ADK's
+`run_async` async-generator and emits one SSE frame per event: a `session`
+frame first, `message` frames carrying `partial` token chunks and the final
+aggregated response, then `done`. The console consumes this with `fetch` +
+`ReadableStream` and renders tokens as they arrive. This mirrors the ADK
+"progressive SSE" pattern (partial chunks → single final aggregated response).
 
-- **Persistence** — sessions are in-memory. Swap `InMemoryRunner` /
-  `_SESSIONS` for `VertexAiSessionService` or a DB-backed session store.
-- **Streaming** — `/run` returns the full turn. Add SSE/WebSocket to stream
-  tokens and tool-call events to the console.
+## End-to-end without credentials
+
+`builtin/echo` is a real ADK `BaseAgent` run through the real `Runner`, but it
+does not call an LLM — so the **full request → runner → SSE → response loop is
+exercised in CI with no GCP credentials and no network**. `agp test --e2e`
+validates the runner stream, the `/run` endpoint, the `/stream` SSE frames, and
+session continuity against it.
+
+## What this does NOT do yet
+
+Next steps to harden into a production product:
+
+- **Persistence** — sessions are in-memory (`_SESSIONS` + `InMemoryRunner`).
+  Swap for `VertexAiSessionService` or a DB-backed session store.
 - **AuthN/Z & multi-tenancy** — add an identity layer (IAP / OAuth) and
-  per-user/project isolation; gate `/run` behind it.
-- **Non-Python execution** — the runner executes Python agents. TS/Go/Java
+  per-user/project isolation; gate `/run` and `/stream` behind it.
+- **Non-Python execution** — the runner executes Python + builtin agents. TS/Go/Java
   agents are catalogued but run via their own ADK servers; the gateway could
   proxy to them over **A2A** (agent-to-agent protocol).
 - **Observability** — wire the existing `agent-observability-bq` pattern in as

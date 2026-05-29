@@ -233,3 +233,6 @@ go/agents/sail-researcher/server
 
 # Temporary Files for Agent Engine Deployment
 **/*_tmp*/
+
+.venv/
+agent_platform/TEST_RESULTS.txt

@@ -2,12 +2,14 @@
 
 Turns this repo's collection of **80+ standalone ADK sample agents** into a
 single, runnable **agent AI platform**: discover every agent, browse them in a
-web console, chat with any runnable one through a unified API, scaffold new
-agents, and deploy.
+web console, **chat with token streaming (SSE)**, drive everything from a
+**CLI**, scaffold new agents, and deploy.
 
 It is **additive and non-invasive** — no sample agent is modified. The platform
 keys off the existing ADK `root_agent` convention, so new samples appear
-automatically.
+automatically. A credential-free **builtin echo agent** lets the full
+request → runner → SSE → response loop be tested end to end with **no GCP
+credentials and no network**.
 
 > See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the design and roadmap.
 
@@ -16,48 +18,56 @@ automatically.
 | Layer | Path | What it does |
 |-------|------|--------------|
 | Registry | `registry/build_registry.py` | Scans the repo → `agents.json` (offline) |
-| API Gateway | `backend/app.py` | FastAPI: list / detail / run agents |
-| Web Console | `frontend/index.html` | Browse, filter, and chat with agents |
+| API Gateway | `backend/app.py` | FastAPI: list / detail / run / **stream (SSE)** |
+| Web Console | `frontend/index.html` | Browse, filter, chat with live streaming |
+| CLI | `cli.py` (`agp`) | Drive the whole platform from the terminal |
 | Studio | `studio/create_agent.py` | Scaffold a new agent from a template |
+| Builtin agent | `builtin_agents/echo/` | Credential-free agent for e2e tests/demos |
 | Deploy | `deploy/` | Containerize the gateway; per-agent → Vertex |
 
-## Quickstart
+## Quickstart (CLI-first)
 
 ```bash
-# 1. Build the catalog (no deps, no creds needed)
-python agent_platform/registry/build_registry.py
-
-# 2. Install the gateway and run it
+python -m venv .venv && . .venv/bin/activate
 pip install -r agent_platform/backend/requirements.txt
-uvicorn agent_platform.backend.app:app --reload
 
-# 3. Open the console
-open http://localhost:8000
+# Everything runs through the `agp` CLI (python -m agent_platform):
+python -m agent_platform doctor              # environment / readiness check
+python -m agent_platform registry build      # scan repo -> agents.json
+python -m agent_platform agents list -l builtin
+python -m agent_platform agents run builtin/echo "hello"   # no creds needed
+python -m agent_platform serve               # gateway + console at :8000
 ```
 
-The **catalog, search, and agent detail views work immediately** with no
-credentials. To actually *run* an agent (the `/run` endpoint), you need
-`google-adk` installed (in `requirements.txt`) plus the GCP/Vertex credentials
-that the specific sample agent expects — see that agent's `.env.example`.
+Open <http://localhost:8000> for the console.
+
+The **catalog, search, detail, and the builtin echo agent work immediately**
+with no credentials. To run a *cloud* sample agent, configure the GCP/Vertex
+credentials that agent's `.env.example` describes.
 
 ## API
 
 | Method | Endpoint | Purpose |
 |--------|----------|---------|
-| `GET` | `/api/health` | Status + agent count + whether execution is available |
+| `GET` | `/api/health` | Status + agent count + execution availability |
 | `GET` | `/api/agents?language=&category=&q=` | List / filter the catalog |
 | `GET` | `/api/agents/{language}/{name}` | Agent detail + README |
-| `POST`| `/api/agents/{language}/{name}/run` | Run one turn (`{"message": "...", "session_id": null}`) |
+| `POST`| `/api/agents/{language}/{name}/run` | Run one turn (buffered) |
+| `POST`| `/api/agents/{language}/{name}/stream` | Run one turn, **SSE token stream** |
 
 ## Build a new agent
 
 ```bash
-python agent_platform/studio/create_agent.py invoice-helper \
-    --description "Extracts and validates invoice fields" \
-    --model gemini-2.5-flash
+python -m agent_platform new invoice-helper \
+    -d "Extracts and validates invoice fields" -m gemini-2.5-flash
+# scaffolds python/agents/invoice-helper/, registers it; reload the console.
+```
 
-python agent_platform/registry/build_registry.py   # register it
-# reload the console — "invoice-helper" is now in the catalog
+## Tests
+
+```bash
+python -m agent_platform test          # light tests (no creds)
+python -m agent_platform test --e2e    # full e2e via builtin/echo agent
 ```
 
 ## Deploy
